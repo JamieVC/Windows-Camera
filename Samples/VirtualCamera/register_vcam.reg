@@ -1,0 +1,15 @@
+Windows Registry Editor Version 5.00
+
+[HKEY_CLASSES_ROOT\CLSID\{7B89B92E-FE71-42D0-8A41-E137D06EA184}]
+@="VirtualCameraMediaSource"
+
+[HKEY_CLASSES_ROOT\CLSID\{7B89B92E-FE71-42D0-8A41-E137D06EA184}\InprocServer32]
+@="C:\\source\\_fork\\Windows-Camera\\Samples\\VirtualCamera\\x64\\Debug\\VirtualCameraMediaSource.dll"
+"ThreadingModel"="Both"
+
+[HKEY_LOCAL_MACHINE\SOFTWARE\Classes\CLSID\{7B89B92E-FE71-42D0-8A41-E137D06EA184}]
+@="VirtualCameraMediaSource"
+
+[HKEY_LOCAL_MACHINE\SOFTWARE\Classes\CLSID\{7B89B92E-FE71-42D0-8A41-E137D06EA184}\InprocServer32]
+@="C:\\source\\_fork\\Windows-Camera\\Samples\\VirtualCamera\\x64\\Debug\\VirtualCameraMediaSource.dll"
+"ThreadingModel"="Both"
