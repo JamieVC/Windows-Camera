@@ -87,6 +87,7 @@ function Debug-Service_Interal
     }
     else
     {
+        Write-Log "Using windbg: $windbg"
         if((test-path $windbg) -eq $false)
         {
             Write-Log "Cannot find windbg: $windbg" -logStyle Error

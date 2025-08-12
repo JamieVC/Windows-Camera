@@ -696,10 +696,13 @@ namespace ExtendedControlAndMetadataSampleApp
                 if (UIBackgroundSegmentationModes.SelectedIndex >= 0)
                 {
                     ulong flagValueToSet = m_possibleBackgroundSegmentationFlagValues[(string)UIBackgroundSegmentationModes.SelectedItem];
+                    DebugOutput($"flagValueToSet set to: {flagValueToSet.ToString()}");
                     PropertyInquiry.SetExtendedControlFlags(m_selectedMediaFrameSource.Controller.VideoDeviceController, ExtendedControlKind.KSPROPERTY_CAMERACONTROL_EXTENDED_BACKGROUNDSEGMENTATION, flagValueToSet);
+                    DebugOutput($"Background segmentation mode set to: {UIBackgroundSegmentationModes.SelectedItem}");
 
                     // cache whether or not we are asking for background mask metadata to be produced
                     m_isBackgroundSegmentationMaskModeOn = (((ulong)BackgroundSegmentationCapabilityKind.KSCAMERA_EXTENDEDPROP_BACKGROUNDSEGMENTATION_MASK & flagValueToSet) != 0);
+                    DebugOutput($"m_isBackgroundSegmentationMaskModeOn set to: {m_isBackgroundSegmentationMaskModeOn}");
                     UIShowBackgroundImage.IsEnabled = m_isBackgroundSegmentationMaskModeOn;
                     UIShowBackgroundImage.IsChecked = false;
                 }

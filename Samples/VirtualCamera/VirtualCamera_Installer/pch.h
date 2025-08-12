@@ -39,7 +39,6 @@
 #include <winrt/Windows.Media.Devices.h>
 #include <winrt/Windows.Media.Devices.Core.h>
 #include <winrt/Windows.Media.MediaProperties.h>
-#include <winrt/Windows.ApplicationModel.h>
 
 namespace winrt
 {
@@ -53,7 +52,6 @@ using namespace winrt::Windows::Media::Capture::Frames;
 using namespace winrt::Windows::Media::Devices;
 using namespace winrt::Windows::Media::Core;
 using namespace winrt::Windows::Media::MediaProperties;
-using namespace winrt::Windows::ApplicationModel;
 
 #pragma comment(lib, "windowsapp")
 #pragma comment(lib, "mfuuid")

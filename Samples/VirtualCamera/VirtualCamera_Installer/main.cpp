@@ -223,8 +223,20 @@ HRESULT SelectRegisterVirtualCamera(_Outptr_ IMFVirtualCamera** ppVirtualCamera)
         case 1:
         {
             SimpleMediaSourceUT test;
-            RETURN_IF_FAILED(SelectLifetimeAndAccess(&lifetime, &access));
-            RETURN_IF_FAILED(test.CreateVirtualCamera(lifetime, access, ppVirtualCamera));
+            HRESULT hr = SelectLifetimeAndAccess(&lifetime, &access);
+            if (FAILED(hr))
+            {
+                LOG_ERROR(L"SelectLifetimeAndAccess failed: 0x%08x", hr);
+                return hr;
+            }
+            
+            LOG_COMMENT(L"Calling test.CreateVirtualCamera with lifetime=%d, access=%d", lifetime, access);
+            hr = test.CreateVirtualCamera(lifetime, access, ppVirtualCamera);
+            if (FAILED(hr))
+            {
+                LOG_ERROR(L"SimpleMediaSourceUT::CreateVirtualCamera failed: 0x%08x", hr);
+                return hr;
+            }
             break;
         }
         case 2: 
@@ -232,8 +244,20 @@ HRESULT SelectRegisterVirtualCamera(_Outptr_ IMFVirtualCamera** ppVirtualCamera)
             auto devInfo = SelectPhysicalCamera();
             
             HWMediaSourceUT test(devInfo.Id());
-            RETURN_IF_FAILED(SelectLifetimeAndAccess(&lifetime, &access));
-            RETURN_IF_FAILED(test.CreateVirtualCamera(devInfo.Name(), lifetime, access, ppVirtualCamera));
+            HRESULT hr = SelectLifetimeAndAccess(&lifetime, &access);
+            if (FAILED(hr))
+            {
+                LOG_ERROR(L"SelectLifetimeAndAccess failed: 0x%08x", hr);
+                return hr;
+            }
+            
+            LOG_COMMENT(L"Calling HWMediaSourceUT::CreateVirtualCamera with lifetime=%d, access=%d", lifetime, access);
+            hr = test.CreateVirtualCamera(devInfo.Name(), lifetime, access, ppVirtualCamera);
+            if (FAILED(hr))
+            {
+                LOG_ERROR(L"HWMediaSourceUT::CreateVirtualCamera failed: 0x%08x", hr);
+                return hr;
+            }
             break;
         }
         case 3:
@@ -241,8 +265,20 @@ HRESULT SelectRegisterVirtualCamera(_Outptr_ IMFVirtualCamera** ppVirtualCamera)
             auto devInfo = SelectPhysicalCamera();
 
             AugmentedMediaSourceUT test(devInfo.Id());
-            RETURN_IF_FAILED(SelectLifetimeAndAccess(&lifetime, &access));
-            RETURN_IF_FAILED(test.CreateVirtualCamera(devInfo.Name(), lifetime, access, ppVirtualCamera));
+            HRESULT hr = SelectLifetimeAndAccess(&lifetime, &access);
+            if (FAILED(hr))
+            {
+                LOG_ERROR(L"SelectLifetimeAndAccess failed: 0x%08x", hr);
+                return hr;
+            }
+            
+            LOG_COMMENT(L"Calling AugmentedMediaSourceUT::CreateVirtualCamera with lifetime=%d, access=%d", lifetime, access);
+            hr = test.CreateVirtualCamera(devInfo.Name(), lifetime, access, ppVirtualCamera);
+            if (FAILED(hr))
+            {
+                LOG_ERROR(L"AugmentedMediaSourceUT::CreateVirtualCamera failed: 0x%08x", hr);
+                return hr;
+            }
             break;
         }
 
@@ -282,9 +318,30 @@ HRESULT VCamApp()
         {
             case 1: // Interactive install of virtual camera
             {
-                wil::com_ptr_nothrow<IMFVirtualCamera> spVirtualCamera;
-                RETURN_IF_FAILED_MSG(SelectRegisterVirtualCamera(&spVirtualCamera), "Register Virtual Camera failed");
-                RETURN_IF_FAILED(spVirtualCamera->Shutdown());
+                try
+                {
+                    wil::com_ptr_nothrow<IMFVirtualCamera> spVirtualCamera;
+                    HRESULT hr = SelectRegisterVirtualCamera(&spVirtualCamera);
+                    if (FAILED(hr))
+                    {
+                        LOG_ERROR(L"SelectRegisterVirtualCamera failed: 0x%08x", hr);
+                        break;
+                    }
+                    RETURN_IF_FAILED(spVirtualCamera->Shutdown());
+                }
+                catch (const winrt::hresult_error& e)
+                {
+                    LOG_ERROR(L"WinRT Exception caught - HRESULT: 0x%08x, Message: %s", 
+                              e.code(), e.message().c_str());
+                }
+                catch (const std::exception& e)
+                {
+                    LOG_ERROR(L"Standard exception caught: %S", e.what());
+                }
+                catch (...)
+                {
+                    LOG_ERROR(L"Unknown exception caught");
+                }
                 break;
             }
 
@@ -364,31 +421,55 @@ HRESULT VCamApp()
 
 int wmain(int argc, wchar_t* argv[])
 {
-    winrt::init_apartment();
-    EnableVTMode();
-    wil::SetResultLoggingCallback(WilFailureLog);
-
-    LOG_COMMENT(L"Virtual Camera simple application !");
-    RETURN_IF_FAILED(MFStartup(MF_VERSION));
-
-    if (argc == 2)
+    try
     {
-        if (_wcsicmp(argv[1], L"/Uninstall") == 0)
-        {
-            // MSI Uninstall mode
-            VCamAppUnInstall();
-            return 0;
-        }
-        else if (_wcsicmp(argv[1], L"/?") == 0)
-        {
-            LOG_COMMENT(L"\n default - Simple application to install//test//remove VirtualCamera, \n run  /uninstall  to test MIS uninstallation function.  ");
-        }
-    }
-    else
-    {
-        // VCam application
-        RETURN_IF_FAILED(VCamApp());
-    }
+        winrt::init_apartment();
+        EnableVTMode();
+        wil::SetResultLoggingCallback(WilFailureLog);
 
-    return S_OK;
+        LOG_COMMENT(L"Virtual Camera simple application !");
+        RETURN_IF_FAILED(MFStartup(MF_VERSION));
+
+        if (argc == 2)
+        {
+            if (_wcsicmp(argv[1], L"/Uninstall") == 0)
+            {
+                // MSI Uninstall mode
+                VCamAppUnInstall();
+                return 0;
+            }
+            else if (_wcsicmp(argv[1], L"/?") == 0)
+            {
+                LOG_COMMENT(L"\n default - Simple application to install//test//remove VirtualCamera, \n run  /uninstall  to test MIS uninstallation function.  ");
+            }
+        }
+        else
+        {
+            // VCam application
+            HRESULT hr = VCamApp();
+            if (FAILED(hr))
+            {
+                LOG_ERROR(L"VCamApp failed: 0x%08x", hr);
+                return hr;
+            }
+        }
+
+        return S_OK;
+    }
+    catch (const winrt::hresult_error& e)
+    {
+        LOG_ERROR(L"Top-level WinRT Exception - HRESULT: 0x%08x, Message: %s", 
+                  e.code(), e.message().c_str());
+        return e.code();
+    }
+    catch (const std::exception& e)
+    {
+        LOG_ERROR(L"Top-level Standard exception: %S", e.what());
+        return E_FAIL;
+    }
+    catch (...)
+    {
+        LOG_ERROR(L"Top-level Unknown exception caught");
+        return E_UNEXPECTED;
+    }
 }

@@ -5,6 +5,7 @@
 #pragma once
 
 #include <windows.h>
+#include <appmodel.h>
 #include <propvarutil.h>
 #include <ole2.h>  // include unknown.h this must come before winrt header
 #include <winerror.h>

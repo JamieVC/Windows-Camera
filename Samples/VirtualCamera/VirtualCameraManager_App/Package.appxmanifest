@@ -11,8 +11,8 @@
 
   <Identity
     Name="dfd155f3-04d9-4b9b-8d45-3ebd7964c32a"
-    Publisher="CN=lobourre"
-    Version="1.0.0.0" />
+    Publisher="CN=jamiecha"
+    Version="1.5.4.0" />
 
   <mp:PhoneIdentity PhoneProductId="dfd155f3-04d9-4b9b-8d45-3ebd7964c32a" PhonePublisherId="00000000-0000-0000-0000-000000000000"/>
 

@@ -143,19 +143,35 @@ HRESULT VCamUtils::RegisterVirtualCamera(
     }
     LOG_COMMENT(L"Succeeded (%p)! ", spVirtualCamera.get());
 
+    // Check if running in packaged context (UWP/MSIX) before calling AppInfo
     try 
     {
-        AppInfo appInfo = winrt::Windows::ApplicationModel::AppInfo::Current();
-        if (appInfo != nullptr)
+        // Use a safer approach to check for package context
+        UINT32 length = 0;
+        LONG result = GetCurrentPackageFullName(&length, nullptr);
+        if (result == ERROR_SUCCESS || result == ERROR_INSUFFICIENT_BUFFER)
         {
-            LOG_COMMENT(L"PFN: %s ", appInfo.PackageFamilyName().data());
+            // We're in a packaged context, safe to call AppInfo
+            LOG_COMMENT(L"Get AppInfo");
+            AppInfo appInfo = winrt::Windows::ApplicationModel::AppInfo::Current();
+            if (appInfo != nullptr)
+            {
+                LOG_COMMENT(L"PFN: %s ", appInfo.PackageFamilyName().data());
+            }
+            else
+            {
+                LOG_COMMENT(L"No PFN associated with current process");
+            }
         }
         else
         {
-            LOG_COMMENT(L"No PFN accodiated with current process");
+            LOG_COMMENT(L"Running as Win32 application (not packaged)");
         }
     }
-    catch (winrt::hresult_error) { LOG_WARNING(L"not running in app package"); }
+    catch (winrt::hresult_error const& e) 
+    { 
+        LOG_WARNING(L"AppInfo access failed: 0x%08x - not running in app package", e.code()); 
+    }
 
 
     HRESULT hr = spVirtualCamera->AddProperty(
