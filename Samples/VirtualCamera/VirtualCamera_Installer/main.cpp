@@ -321,13 +321,16 @@ HRESULT VCamApp()
                 try
                 {
                     wil::com_ptr_nothrow<IMFVirtualCamera> spVirtualCamera;
+                    LOG_COMMENT(L"About to call SelectRegisterVirtualCamera...");
                     HRESULT hr = SelectRegisterVirtualCamera(&spVirtualCamera);
                     if (FAILED(hr))
                     {
                         LOG_ERROR(L"SelectRegisterVirtualCamera failed: 0x%08x", hr);
                         break;
                     }
+                    LOG_COMMENT(L"SelectRegisterVirtualCamera succeeded, shutting down...");
                     RETURN_IF_FAILED(spVirtualCamera->Shutdown());
+                    LOG_COMMENT(L"Virtual camera shut down successfully!");
                 }
                 catch (const winrt::hresult_error& e)
                 {

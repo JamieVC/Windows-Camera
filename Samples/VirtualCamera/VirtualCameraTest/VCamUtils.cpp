@@ -124,7 +124,13 @@ HRESULT VCamUtils::RegisterVirtualCamera(
     if(!strPhysicalCamSymLink.empty())
     {
         LOG_COMMENT(L"Add physical cam: %s ", strPhysicalCamSymLink.data());
-        RETURN_IF_FAILED(spVirtualCamera->AddDeviceSourceInfo(strPhysicalCamSymLink.data()));
+        HRESULT hr = spVirtualCamera->AddDeviceSourceInfo(strPhysicalCamSymLink.data());
+        if (FAILED(hr))
+        {
+            LOG_ERROR(L"AddDeviceSourceInfo failed: 0x%08x for device: %s", hr, strPhysicalCamSymLink.data());
+            return hr;
+        }
+        LOG_COMMENT(L"Physical camera added successfully");
     }
     
     if (pAttributes)
@@ -209,8 +215,26 @@ HRESULT VCamUtils::RegisterVirtualCamera(
         "Fail to addproperty - DEVPKEY_DeviceInterface_VCamCreate_Access ");
 
     LOG_COMMENT(L"Start camera ");
-    RETURN_IF_FAILED(spVirtualCamera->Start(nullptr));
-    LOG_COMMENT(L"Succeeded!");
+    try 
+    {
+        HRESULT hr = spVirtualCamera->Start(nullptr);
+        if (FAILED(hr))
+        {
+            LOG_ERROR(L"spVirtualCamera->Start failed: 0x%08x", hr);
+            return hr;
+        }
+        LOG_COMMENT(L"Virtual camera started successfully!");
+    }
+    catch (winrt::hresult_error const& e)
+    {
+        LOG_ERROR(L"WinRT exception in Start: 0x%08x - %s", e.code(), e.message().c_str());
+        return e.code();
+    }
+    catch (...)
+    {
+        LOG_ERROR(L"Unknown exception in Start");
+        return E_UNEXPECTED;
+    }
 
     *ppVirtualCamera = spVirtualCamera.detach();
 

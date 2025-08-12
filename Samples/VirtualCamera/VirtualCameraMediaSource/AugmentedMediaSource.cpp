@@ -1027,15 +1027,26 @@ namespace winrt::WindowsSample::implementation
         // a particular PFN.
         try
         {
-            winrt::Windows::ApplicationModel::AppInfo appInfo = winrt::Windows::ApplicationModel::AppInfo::Current();
-            DEBUG_MSG(L"AppInfo: %p ", appInfo);
-            if (appInfo != nullptr)
+            // Use a safer approach to check for package context before calling AppInfo
+            UINT32 length = 0;
+            LONG result = GetCurrentPackageFullName(&length, nullptr);
+            if (result == ERROR_SUCCESS || result == ERROR_INSUFFICIENT_BUFFER)
             {
-                DEBUG_MSG(L"PFN: %s \n", appInfo.PackageFamilyName().data());
-                RETURN_IF_FAILED(m_spAttributes->SetString(MF_VIRTUALCAMERA_CONFIGURATION_APP_PACKAGE_FAMILY_NAME, appInfo.PackageFamilyName().data()));
+                // We're in a packaged context, safe to call AppInfo
+                winrt::Windows::ApplicationModel::AppInfo appInfo = winrt::Windows::ApplicationModel::AppInfo::Current();
+                DEBUG_MSG(L"AppInfo: %p ", appInfo);
+                if (appInfo != nullptr)
+                {
+                    DEBUG_MSG(L"PFN: %s \n", appInfo.PackageFamilyName().data());
+                    RETURN_IF_FAILED(m_spAttributes->SetString(MF_VIRTUALCAMERA_CONFIGURATION_APP_PACKAGE_FAMILY_NAME, appInfo.PackageFamilyName().data()));
+                }
+            }
+            else
+            {
+                DEBUG_MSG(L"Running as Win32 application (not packaged) - skipping PFN setup");
             }
         }
-        catch (...) { DEBUG_MSG(L"Not running in app package"); }
+        catch (...) { DEBUG_MSG(L"AppInfo access failed - not running in app package"); }
         
 
         return S_OK;

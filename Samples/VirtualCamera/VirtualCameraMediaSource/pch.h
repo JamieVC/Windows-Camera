@@ -4,6 +4,7 @@
 #pragma once
 #include <unknwn.h>
 #include <windows.h>
+#include <appmodel.h>
 #include <propvarutil.h>
 #include <devpropdef.h>
 #include "devpkey.h"
