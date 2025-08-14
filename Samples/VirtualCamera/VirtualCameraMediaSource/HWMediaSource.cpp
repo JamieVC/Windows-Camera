@@ -48,6 +48,18 @@ namespace winrt::WindowsSample::implementation
         m_xOnMediaSourceEvent.attach(ptr.detach());
         RETURN_IF_FAILED(m_spDevSource->BeginGetEvent(m_xOnMediaSourceEvent.get(), m_spDevSource.get()));
 
+        // Initialize WSE Controller
+        m_spWSEController = wil::com_ptr<WSEController>(new (std::nothrow) WSEController());
+        if (m_spWSEController)
+        {
+            // Set up effect change callback
+            m_spWSEController->RegisterEffectCallback([this](WSEEffectType effect, bool enabled) {
+                char buffer[256];
+                sprintf_s(buffer, "[HW] WSE Effect changed: %d, enabled: %s\n", static_cast<int>(effect), enabled ? "true" : "false");
+                OutputDebugStringA(buffer);
+            });
+        }
+
         m_sourceState = SourceState::Stopped;
         m_initalized = true;
 
@@ -301,9 +313,21 @@ namespace winrt::WindowsSample::implementation
         )
     {
         winrt::slim_lock_guard lock(m_Lock);
-        wil::com_ptr_nothrow<IMFGetService> spGetService;
-
+        
         RETURN_IF_FAILED(_CheckShutdownRequiresLock());
+        
+        // Check if requesting WSE service
+        if (guidService == MF_WSE_SERVICE)
+        {
+            if (m_spWSEController && riid == __uuidof(IWSEController))
+            {
+                return m_spWSEController->QueryInterface(riid, ppvObject);
+            }
+            return E_NOINTERFACE;
+        }
+        
+        // Delegate to device source
+        wil::com_ptr_nothrow<IMFGetService> spGetService;
         if (SUCCEEDED(m_spDevSource->QueryInterface(IID_PPV_ARGS(&spGetService))))
         {
             RETURN_IF_FAILED(spGetService->GetService(guidService, riid, ppvObject));
@@ -663,5 +687,42 @@ namespace winrt::WindowsSample::implementation
         catch (...) { DEBUG_MSG(L"AppInfo access failed - not running in app package"); }
        
         return S_OK;
+    }
+
+    // WSE Dynamic Control Methods
+    HRESULT HWMediaSource::GetWSEController(_COM_Outptr_ IWSEController** ppController)
+    {
+        RETURN_HR_IF_NULL(E_POINTER, ppController);
+        
+        winrt::slim_lock_guard lock(m_Lock);
+        
+        if (m_spWSEController)
+        {
+            return m_spWSEController->QueryInterface(__uuidof(IWSEController), reinterpret_cast<void**>(ppController));
+        }
+        
+        return E_NOT_SET;
+    }
+
+    HRESULT HWMediaSource::EnableBlurRealtime(BOOL enable)
+    {
+        winrt::slim_lock_guard lock(m_Lock);
+        
+        if (m_spWSEController)
+        {
+            return m_spWSEController->EnableBackgroundBlur(enable);
+        }
+        return E_NOT_SET;
+    }
+
+    HRESULT HWMediaSource::SetBlurIntensityRealtime(float intensity)
+    {
+        winrt::slim_lock_guard lock(m_Lock);
+        
+        if (m_spWSEController)
+        {
+            return m_spWSEController->SetBlurIntensity(intensity);
+        }
+        return E_NOT_SET;
     }
 }

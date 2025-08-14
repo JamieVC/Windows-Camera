@@ -3,6 +3,8 @@
 //
 
 #pragma once
+#ifndef PCH_TEST_H
+#define PCH_TEST_H
 
 #include <windows.h>
 #include <appmodel.h>
@@ -12,7 +14,8 @@
 
 #include <initguid.h>
 #include <devpropdef.h>
-#include "devpkey.h"
+//#include "devpkey.h"
+#include <devpkey.h>
 #include "cfgmgr32.h"
 
 #include <Ks.h>
@@ -77,3 +80,5 @@ using namespace winrt::Windows::ApplicationModel;
 #endif
 
 #include "Logger.h"
+
+#endif // PCH_TEST_H

@@ -128,6 +128,8 @@
     <ClInclude Include="pch.h" />
     <ClInclude Include="SimpleMediaSourceUT.h" />
     <ClInclude Include="VCamUtils.h" />
+    <ClInclude Include="WSEController.h" />
+    <ClInclude Include="WSERuntimeControl.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="AugmentedMediaSourceUT.cpp" />
@@ -141,6 +143,8 @@
     <ClCompile Include="pch.cpp" />
     <ClCompile Include="SimpleMediaSourceUT.cpp" />
     <ClCompile Include="VCamUtils.cpp" />
+    <ClCompile Include="WSEController.cpp" />
+    <ClCompile Include="WSERuntimeControl.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

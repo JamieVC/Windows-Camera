@@ -1,4 +1,6 @@
 #pragma once
+#ifndef PCH_INSTALLER_H
+#define PCH_INSTALLER_H
 
 #include <windows.h>
 #include <propvarutil.h>
@@ -7,7 +9,8 @@
 
 #include <initguid.h>
 #include <devpropdef.h>
-#include "devpkey.h"
+//#include "devpkey.h"
+#include <devpkey.h>
 #include "cfgmgr32.h"
 
 #include <Ks.h>
@@ -63,3 +66,4 @@ using namespace winrt::Windows::Media::MediaProperties;
  
 #include "Logger.h"
 
+#endif // PCH_INSTALLER_H

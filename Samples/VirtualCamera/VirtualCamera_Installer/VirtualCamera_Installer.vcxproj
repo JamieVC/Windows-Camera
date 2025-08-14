@@ -142,6 +142,8 @@
     <ClInclude Include="..\VirtualCameraTest\EVRHelper.h" />
     <ClInclude Include="..\VirtualCameraTest\SimpleMediaSourceUT.h" />
     <ClInclude Include="..\VirtualCameraTest\VCamUtils.h" />
+    <ClInclude Include="..\VirtualCameraTest\WSEController.h" />
+    <ClInclude Include="..\VirtualCameraTest\WSERuntimeControl.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\VirtualCameraTest\AugmentedMediaSourceUT.cpp" />
@@ -153,6 +155,8 @@
     <ClCompile Include="..\VirtualCameraTest\MediaSourceUT_Common.cpp" />
     <ClCompile Include="..\VirtualCameraTest\SimpleMediaSourceUT.cpp" />
     <ClCompile Include="..\VirtualCameraTest\VCamUtils.cpp" />
+    <ClCompile Include="..\VirtualCameraTest\WSEController.cpp" />
+    <ClCompile Include="..\VirtualCameraTest\WSERuntimeControl.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

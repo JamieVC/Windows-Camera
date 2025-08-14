@@ -2,12 +2,16 @@
 // Copyright (C) Microsoft Corporation. All rights reserved.
 //
 #pragma once
+#ifndef PCH_SOURCE_H
+#define PCH_SOURCE_H
+
 #include <unknwn.h>
 #include <windows.h>
 #include <appmodel.h>
 #include <propvarutil.h>
-#include <devpropdef.h>
-#include "devpkey.h"
+//#include <devpropdef.h>
+//#include "devpkey.h"
+#include <devpkey.h>
 #include "cfgmgr32.h"
 
 #include <ole2.h>  // include unknown.h this must come before winrt header
@@ -26,7 +30,18 @@
 
 #include <mfvirtualcamera.h>
 
+// WSE/MEP headers
+#include <mfcaptureengine.h>
+#include <mftransform.h>
+#include <wmcodecdsp.h>
+#include <evr.h>
+
+// Standard library headers
+#include <mutex>
+#include <functional>
+
 #define RESULT_DIAGNOSTICS_LEVEL 4 // include function name
+#include <wil/result_macros.h>
 
 #include <wil\cppwinrt.h> // must be before the first C++ WinRT header, ref:https://github.com/Microsoft/wil/wiki/Error-handling-helpers
 #include <wil\result.h>
@@ -100,3 +115,5 @@ namespace winrt
 
 #define CHECKHR_GOTO( _hr, _lbl ) { hr = _hr; if( FAILED( hr ) ){ DEBUG_MSG(L"hr=0x%08x", _hr); goto _lbl; } }
 #define CHECKNULL_GOTO( _ptr, _hr, _lbl ) { if(_ptr == nullptr) {hr = _hr; if( FAILED( hr ) ){ DEBUG_MSG(L"hr=0x%08x", _hr); goto _lbl; } } }
+
+#endif // PCH_SOURCE_H

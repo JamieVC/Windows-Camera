@@ -53,6 +53,7 @@
     <ClCompile Include="VirtualCameraMediaSourceActivate.cpp" />
     <ClCompile Include="SimpleMediaStream.cpp" />
     <ClCompile Include="winrtCommon.cpp" />
+    <ClCompile Include="WSEController.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="AugmentedMediaSource.h" />
@@ -66,6 +67,7 @@
     <ClInclude Include="VirtualCameraMediaSourceActivate.h" />
     <ClInclude Include="SimpleMediaStream.h" />
     <ClInclude Include="VirtualCameraMediaSource.h" />
+    <ClInclude Include="WSEController.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{5C0C46DA-5780-4224-99D0-06A4D5F84A5F}</ProjectGuid>

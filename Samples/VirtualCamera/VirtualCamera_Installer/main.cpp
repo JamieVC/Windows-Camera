@@ -12,6 +12,7 @@
 #include "SimpleMediaSourceUT.h"
 #include "HWMediaSourceUT.h"
 #include "AugmentedMediaSourceUT.h"
+#include "WSERuntimeControl.h" //redefination
 
 using namespace VirtualCameraTest::impl;
 
@@ -310,7 +311,7 @@ HRESULT VCamApp()
 {
     while (true)
     {
-        LOG_COMMENT(L"\n select option: \n 1 - register \n 2 - remove \n 3 - TestVCam  \n 4 - TestCustomControl \n 5 - quit \n");
+        LOG_COMMENT(L"\n select option: \n 1 - register \n 2 - remove \n 3 - TestVCam  \n 4 - TestCustomControl \n 5 - BackgroundBlurControl \n 6 - quit \n");
         int select = 0;
         std::wcin >> select;
 
@@ -409,6 +410,63 @@ HRESULT VCamApp()
                     if (colorMode != 0)
                     {
                         RETURN_IF_FAILED(SimpleMediaSourceUT::SetColorMode(spMediaSource.get(), colorMode));
+                    }
+                }
+                break;
+            }
+
+            case 5: // BackgroundBlurControl - Enable/Disable camera background blur
+            {
+                winrt::hstring strSymlink = SelectVirtualCamera();
+                if (!strSymlink.empty())
+                {
+                    wil::com_ptr_nothrow<IMFVirtualCamera> spVirtualCamera;
+                    HRESULT hr = VCamUtils::GetVirtualCameraFromSymlink(strSymlink.data(), &spVirtualCamera);
+                    if (SUCCEEDED(hr))
+                    {
+                        LOG_COMMENT(L"Select blur option: ");
+                        LOG_COMMENT(L" 1 - Enable Background Blur \n 2 - Disable Background Blur \n 3 - Interactive Blur Control");
+                        uint32_t blurSelect = 0;
+                        std::wcin >> blurSelect;
+                        
+                        switch(blurSelect)
+                        {
+                            
+                        case 1:
+                            hr = ToggleBlurEffect(spVirtualCamera.get(), TRUE);
+                            if (SUCCEEDED(hr))
+                            {
+                                LOG_COMMENT(L"✓ Background blur enabled successfully");
+                            }
+                            else
+                            {
+                                LOG_ERROR(L"✗ Failed to enable background blur: 0x%08x", hr);
+                            }
+                            break;
+                        case 2:
+                            hr = ToggleBlurEffect(spVirtualCamera.get(), FALSE);
+                            if (SUCCEEDED(hr))
+                            {
+                                LOG_COMMENT(L"✓ Background blur disabled successfully");
+                            }
+                            else
+                            {
+                                LOG_ERROR(L"✗ Failed to disable background blur: 0x%08x", hr);
+                            }
+                            break;
+                        case 3:
+                            LOG_COMMENT(L"Entering interactive blur control mode...");
+                            RunWSERuntimeControl(spVirtualCamera.get());
+                            break;
+                            
+                        default:
+                            LOG_WARNING(L"Invalid blur option selected!");
+                            break;
+                        }
+                    }
+                    else
+                    {
+                        LOG_ERROR(L"Failed to get virtual camera interface: 0x%08x", hr);
                     }
                 }
                 break;

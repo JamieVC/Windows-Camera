@@ -50,6 +50,7 @@ public:
 
     static HRESULT GetCameraActivate(const wchar_t* pwszSymLink, IMFActivate** ppActivate);
     static HRESULT InitializeVirtualCamera(const wchar_t* pwszSymLink, IMFMediaSource** ppMediaSource);
+    static HRESULT GetVirtualCameraFromSymlink(const wchar_t* pwszSymLink, IMFVirtualCamera** ppVirtualCamera);
     static HRESULT GetVirtualCamera(std::vector<DeviceInformation>& vcamList);
     static HRESULT GetPhysicalCameras(std::vector<DeviceInformation>& physicalCamList);
 };

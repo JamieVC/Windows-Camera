@@ -70,11 +70,11 @@ HRESULT VCamUtils::GetDeviceInterfaceRegistryEntry(
 
     DWORD dwType = 0;
     LONG lResult = RegQueryValueEx(hKey.get(), pwszKeyName, nullptr, &dwType, nullptr, &cbData);
-    RETURN_IF_FAILED_MSG(HRESULT_FROM_WIN32(lResult), "Failed to get reg key: %s", pwszKeyName);
+    RETURN_IF_FAILED_MSG(HRESULT_FROM_WIN32(lResult), "Failed to get reg key: %ws", pwszKeyName);
 
     spBuffer = wil::make_unique_nothrow<BYTE[]>(cbData);
     lResult = RegQueryValueEx(hKey.get(), pwszKeyName, nullptr, &dwType, spBuffer.get(), &cbData);
-    RETURN_IF_FAILED_MSG(HRESULT_FROM_WIN32(lResult), "Failed to get reg key: %s", pwszKeyName);
+    RETURN_IF_FAILED_MSG(HRESULT_FROM_WIN32(lResult), "Failed to get reg key: %ws", pwszKeyName);
 
     return S_OK;
 }
@@ -217,7 +217,7 @@ HRESULT VCamUtils::RegisterVirtualCamera(
     LOG_COMMENT(L"Start camera ");
     try 
     {
-        HRESULT hr = spVirtualCamera->Start(nullptr);
+        hr = spVirtualCamera->Start(nullptr);
         if (FAILED(hr))
         {
             LOG_ERROR(L"spVirtualCamera->Start failed: 0x%08x", hr);
@@ -396,6 +396,47 @@ HRESULT VCamUtils::InitializeVirtualCamera(const wchar_t* pwszSymLink, IMFMediaS
     LOG_COMMENT(L"Activate virtualcamera %s", pwszSymLink);
     RETURN_IF_FAILED(spActivate->ActivateObject(IID_PPV_ARGS(ppMediaSource)));
 
+    return S_OK;
+}
+
+HRESULT VCamUtils::GetVirtualCameraFromSymlink(const wchar_t* pwszSymLink, IMFVirtualCamera** ppVirtualCamera)
+{
+    RETURN_HR_IF_NULL(E_INVALIDARG, pwszSymLink);
+    RETURN_HR_IF_NULL(E_INVALIDARG, ppVirtualCamera);
+    
+    *ppVirtualCamera = nullptr;
+    
+    winrt::hstring strDevSymLink(pwszSymLink);
+    
+    winrt::Windows::Foundation::IReference<winrt::hstring> friendlyName;
+    RETURN_IF_FAILED(CMediaCaptureUtils::GetDeviceProperty(strDevSymLink, _DEVPKEY_DeviceInterface_VCamCreate_FriendlyName, DeviceInformationKind::DeviceInterface, friendlyName));
+    RETURN_HR_IF_NULL(E_INVALIDARG, friendlyName);
+
+    winrt::Windows::Foundation::IReference<winrt::hstring> sourceId;
+    RETURN_IF_FAILED(CMediaCaptureUtils::GetDeviceProperty(strDevSymLink, _DEVPKEY_DeviceInterface_VCamCreate_SourceId, DeviceInformationKind::DeviceInterface, sourceId));
+    RETURN_HR_IF_NULL(E_INVALIDARG, sourceId);
+
+    winrt::Windows::Foundation::IReference<int32_t> lifetime;
+    RETURN_IF_FAILED(CMediaCaptureUtils::GetDeviceProperty(strDevSymLink, _DEVPKEY_DeviceInterface_VCamCreate_Lifetime, DeviceInformationKind::DeviceInterface, lifetime));
+    RETURN_HR_IF_NULL(E_INVALIDARG, lifetime);
+
+    winrt::Windows::Foundation::IReference<int32_t> access;
+    RETURN_IF_FAILED(CMediaCaptureUtils::GetDeviceProperty(strDevSymLink, _DEVPKEY_DeviceInterface_VCamCreate_Access, DeviceInformationKind::DeviceInterface, access));
+    RETURN_HR_IF_NULL(E_INVALIDARG, access);
+
+    wil::com_ptr_nothrow<IMFVirtualCamera> spVirtualCamera;
+    RETURN_IF_FAILED(MFCreateVirtualCamera(
+        MFVirtualCameraType_SoftwareCameraSource,
+        (MFVirtualCameraLifetime)lifetime.Value(),
+        (MFVirtualCameraAccess)access.Value(),
+        friendlyName.Value().data(),
+        sourceId.Value().data(),
+        nullptr, /*Catetgorylist*/
+        0,       /*CatetgoryCount*/
+        &spVirtualCamera));
+    RETURN_HR_IF_NULL_MSG(E_FAIL, spVirtualCamera.get(), "Failed to create virtual camera interface");
+
+    *ppVirtualCamera = spVirtualCamera.detach();
     return S_OK;
 }
 

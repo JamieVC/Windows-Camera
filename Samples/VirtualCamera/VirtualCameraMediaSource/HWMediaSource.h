@@ -6,6 +6,8 @@
 #ifndef HWMEDIASOURCE_H
 #define HWMEDIASOURCE_H
 
+#include "WSEController.h"
+
 namespace winrt::WindowsSample::implementation
 {
     // forward declaration
@@ -81,6 +83,11 @@ namespace winrt::WindowsSample::implementation
         // Non-Interface functions
         HRESULT Initialize(_In_ IMFAttributes* pAttributes, _In_ IMFMediaSource* pMediaSource);
 
+        // WSE Dynamic Control Methods
+        HRESULT GetWSEController(_COM_Outptr_ IWSEController** ppController);
+        HRESULT EnableBlurRealtime(BOOL enable);
+        HRESULT SetBlurIntensityRealtime(float intensity);
+
     private:
         _Requires_lock_held_(m_Lock) HRESULT _CheckShutdownRequiresLock();
         _Requires_lock_held_(m_Lock) HRESULT _CreateSourceAttributes(_In_ IMFAttributes* pActivateAttributes);
@@ -102,6 +109,9 @@ namespace winrt::WindowsSample::implementation
         wil::com_ptr_nothrow<IMFMediaSource> m_spDevSource;
         DWORD m_dwSerialWorkQueueId;
         bool m_initalized = false;
+
+        // WSE Controller
+        wil::com_ptr<WSEController> m_spWSEController;
 
         wil::unique_cotaskmem_array_ptr<wil::com_ptr_nothrow<HWMediaStream>> m_streamList;
     };
