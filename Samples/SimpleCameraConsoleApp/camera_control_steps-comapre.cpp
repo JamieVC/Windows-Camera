@@ -607,203 +607,80 @@ public:
             }
         }
         
-        // Add the PinId to the header for some drivers that require it
-        // STEP 2: Try with full payload structure first (more likely to work with some drivers)
+        // STEP 2: Set up KS property (equivalent to GetExtendedCameraControlPayload)
+        KSPROPERTY prop;
+        prop.Set = KSPROPERTYSETID_ExtendedCameraControl;
+        prop.Id = KSPROPERTY_CAMERACONTROL_EXTENDED_BACKGROUNDSEGMENTATION;
+        prop.Flags = KSPROPERTY_TYPE_GET;
+        
+        // STEP 3: Set up property header to receive data
+        KSCAMERA_EXTENDEDPROP_HEADER header = {0};
+        header.Size = sizeof(header);
+        header.Version = 1;
+        
+        // STEP 4: Make KsProperty call (equivalent to VideoDeviceController.GetDevicePropertyByExtendedId)
+        ULONG bytesReturned = 0;
+        HRESULT hr = m_pKsControl->KsProperty(
+            &prop,
+            sizeof(KSPROPERTY),
+            &header, 
+            sizeof(KSCAMERA_EXTENDEDPROP_HEADER),
+            &bytesReturned);
+            
+        if (SUCCEEDED(hr))
         {
-            // Set up KS property 
-            KSPROPERTY prop;
-            prop.Set = KSPROPERTYSETID_ExtendedCameraControl;
-            prop.Id = KSPROPERTY_CAMERACONTROL_EXTENDED_BACKGROUNDSEGMENTATION;
-            prop.Flags = KSPROPERTY_TYPE_GET;
-            
-            // Use complete payload structure including value
-            struct {
-                KSCAMERA_EXTENDEDPROP_HEADER header;
-                KSCAMERA_EXTENDEDPROP_VALUE value;
-            } payload = {0};
-            
-            payload.header.Size = sizeof(payload);
-            payload.header.Version = 1;
-            payload.header.PinId = KSCAMERA_EXTENDEDPROP_FILTERSCOPE;  // Important for some drivers
-            
-            ULONG bytesReturned = 0;
-            HRESULT hr = m_pKsControl->KsProperty(
-                &prop,
-                sizeof(KSPROPERTY),
-                &payload, 
-                sizeof(payload),
-                &bytesReturned);
-                
-            if (SUCCEEDED(hr))
+            // STEP 5: Check capability (exactly matching UWP's bit test)
+            // if (isBlurControlSupported && (((ulong)BackgroundSegmentationCapabilityKind.KSCAMERA_EXTENDEDPROP_BACKGROUNDSEGMENTATION_BLUR & ~getPayload.Capability) == 0))
+            if ((KSCAMERA_EXTENDEDPROP_BACKGROUNDSEGMENTATION_BLUR & ~header.Capability) == 0)
             {
-                if ((KSCAMERA_EXTENDEDPROP_BACKGROUNDSEGMENTATION_BLUR & ~payload.header.Capability) == 0)
-                {
-                    std::cout << "Background blur is supported on this camera! (Full payload method)" << std::endl;
-                    std::cout << "Capability flags: 0x" << std::hex << payload.header.Capability << std::dec << std::endl;
-                    m_blurCapabilities = payload.header.Capability;
-                    m_isBlurSupported = true;
-                    m_studioEffectsAvailable = true;
-                    return true;
-                }
-                else
-                {
-                    std::cout << "Camera supports background segmentation but not blur." << std::endl;
-                    std::cout << "Capability flags: 0x" << std::hex << payload.header.Capability << std::dec << std::endl;
-                }
+                std::cout << "Background blur is supported on this camera!" << std::endl;
+                std::cout << "Capability flags: 0x" << std::hex << header.Capability << std::dec << std::endl;
+                m_blurCapabilities = header.Capability;
+                m_isBlurSupported = true;
+                m_studioEffectsAvailable = true;
+                
+                // STEP 6: Store the capabilities for later use (like m_backgroundBlurController in UWP)
+                // In UWP this would create a DefaultController
+                // In Win32 we just store the capabilities in member variables
+                
+                return true;
             }
             else
             {
-                std::cout << "Full payload method failed: 0x" << std::hex << hr << std::dec << std::endl;
+                std::cout << "Camera supports background segmentation but not blur." << std::endl;
+                std::cout << "Capability flags: 0x" << std::hex << header.Capability << std::dec << std::endl;
             }
         }
-        
-        // STEP 3: Try header-only approach with explicit PinId
+        else
         {
-            KSPROPERTY prop;
-            prop.Set = KSPROPERTYSETID_ExtendedCameraControl;
-            prop.Id = KSPROPERTY_CAMERACONTROL_EXTENDED_BACKGROUNDSEGMENTATION;
-            prop.Flags = KSPROPERTY_TYPE_GET;
+            // Try Windows Studio Effects property set as fallback
+            std::cout << "Failed to get capability: 0x" << std::hex << hr << std::dec << std::endl;
+            std::cout << "Trying with Windows Studio Effects property set..." << std::endl;
             
-            KSCAMERA_EXTENDEDPROP_HEADER header = {0};
-            header.Size = sizeof(header);
-            header.Version = 1;
-            header.PinId = KSCAMERA_EXTENDEDPROP_FILTERSCOPE;  // Important for some drivers
-            
-            ULONG bytesReturned = 0;
-            HRESULT hr = m_pKsControl->KsProperty(
+            prop.Set = KSPROPERTYSETID_WindowsStudioEffects;
+            hr = m_pKsControl->KsProperty(
                 &prop,
                 sizeof(KSPROPERTY),
                 &header, 
                 sizeof(KSCAMERA_EXTENDEDPROP_HEADER),
                 &bytesReturned);
                 
-            if (SUCCEEDED(hr))
-            {
-                if ((KSCAMERA_EXTENDEDPROP_BACKGROUNDSEGMENTATION_BLUR & ~header.Capability) == 0)
-                {
-                    std::cout << "Background blur is supported on this camera! (Header method)" << std::endl;
-                    std::cout << "Capability flags: 0x" << std::hex << header.Capability << std::dec << std::endl;
-                    m_blurCapabilities = header.Capability;
-                    m_isBlurSupported = true;
-                    m_studioEffectsAvailable = true;
-                    return true;
-                }
-            }
-            else
-            {
-                std::cout << "Header method failed: 0x" << std::hex << hr << std::dec << std::endl;
-            }
-        }
-        
-        // STEP 4: Try with Windows Studio Effects property set
-        {
-            std::cout << "Trying with Windows Studio Effects property set..." << std::endl;
-            
-            KSPROPERTY prop;
-            prop.Set = KSPROPERTYSETID_WindowsStudioEffects;
-            prop.Id = KSPROPERTY_CAMERACONTROL_EXTENDED_BACKGROUNDSEGMENTATION;
-            prop.Flags = KSPROPERTY_TYPE_GET;
-            
-            // Try with full payload first
-            struct {
-                KSCAMERA_EXTENDEDPROP_HEADER header;
-                KSCAMERA_EXTENDEDPROP_VALUE value;
-            } payload = {0};
-            
-            payload.header.Size = sizeof(payload);
-            payload.header.Version = 1;
-            payload.header.PinId = KSCAMERA_EXTENDEDPROP_FILTERSCOPE;  // Important for some drivers
-            
-            ULONG bytesReturned = 0;
-            HRESULT hr = m_pKsControl->KsProperty(
-                &prop,
-                sizeof(KSPROPERTY),
-                &payload, 
-                sizeof(payload),
-                &bytesReturned);
-                
-            if (SUCCEEDED(hr) && (KSCAMERA_EXTENDEDPROP_BACKGROUNDSEGMENTATION_BLUR & ~payload.header.Capability) == 0)
+            if (SUCCEEDED(hr) && (KSCAMERA_EXTENDEDPROP_BACKGROUNDSEGMENTATION_BLUR & ~header.Capability) == 0)
             {
                 std::cout << "Background blur is supported through Windows Studio Effects!" << std::endl;
-                m_blurCapabilities = payload.header.Capability;
+                m_blurCapabilities = header.Capability;
                 m_isBlurSupported = true;
                 m_studioEffectsAvailable = true;
                 return true;
             }
         }
         
-        // STEP 5: Try a 'blind' attempt to enable blur - some drivers support it even without returning capability
-        {
-            std::cout << "Trying to enable blur directly as detection method..." << std::endl;
-            
-            KSPROPERTY prop;
-            prop.Set = KSPROPERTYSETID_ExtendedCameraControl;
-            prop.Id = KSPROPERTY_CAMERACONTROL_EXTENDED_BACKGROUNDSEGMENTATION;
-            prop.Flags = KSPROPERTY_TYPE_SET;
-            
-            struct {
-                KSCAMERA_EXTENDEDPROP_HEADER header;
-                KSCAMERA_EXTENDEDPROP_VALUE value;
-            } payload = {0};
-            
-            payload.header.Size = sizeof(payload);
-            payload.header.Version = 1;
-            payload.header.PinId = KSCAMERA_EXTENDEDPROP_FILTERSCOPE;
-            payload.header.Flags = KSCAMERA_EXTENDEDPROP_BACKGROUNDSEGMENTATION_BLUR;
-            
-            ULONG bytesReturned = 0;
-            HRESULT hr = m_pKsControl->KsProperty(
-                &prop,
-                sizeof(KSPROPERTY),
-                &payload, 
-                sizeof(payload),
-                &bytesReturned);
-                
-            // Immediately try to turn it back off
-            if (SUCCEEDED(hr))
-            {
-                std::cout << "Successfully enabled blur directly! Camera supports background blur." << std::endl;
-                m_blurCapabilities = KSCAMERA_EXTENDEDPROP_BACKGROUNDSEGMENTATION_BLUR;
-                m_isBlurSupported = true;
-                m_studioEffectsAvailable = true;
-                
-                // Now disable it again
-                payload.header.Flags = 0;
-                m_pKsControl->KsProperty(
-                    &prop,
-                    sizeof(KSPROPERTY),
-                    &payload, 
-                    sizeof(payload),
-                    &bytesReturned);
-                
-                return true;
-            }
-            else
-            {
-                std::cout << "Direct blur enable failed: 0x" << std::hex << hr << std::dec << std::endl;
-            }
-        }
-        
-        // STEP 6: Try specific method for ASUS cameras which may use a different mechanism
-        if (GetCameraName().find(L"ASUS") != std::wstring::npos)
-        {
-            std::cout << "Detected ASUS camera - trying ASUS-specific detection..." << std::endl;
-            
-            // Some ASUS cameras support blur but use a different mechanism
-            // In this case, we'll assume it's supported by the camera name
-            std::cout << "ASUS camera detected - assuming background blur is supported" << std::endl;
-            m_blurCapabilities = KSCAMERA_EXTENDEDPROP_BACKGROUNDSEGMENTATION_BLUR;
-            m_isBlurSupported = true;
-            m_studioEffectsAvailable = true;
-            return true;
-        }
-        
-        // STEP 7: As a last resort, fall back to our WSE detector
-        std::cout << "Trying specialized WSE detection methods..." << std::endl;
+        // If the direct KsProperty approach fails, fall back to our WSE detector
+        std::cout << "Trying alternative detection methods..." << std::endl;
         m_isBlurSupported = WindowsStudioEffectsDetector::DetectWindowsStudioEffects(m_pCaptureFilter);
         
         if (m_isBlurSupported) {
-            std::cout << "Background blur is supported via specialized detection!" << std::endl;
+            std::cout << "Background blur is supported via alternative detection!" << std::endl;
             m_studioEffectsAvailable = true;
             return true;
         }
